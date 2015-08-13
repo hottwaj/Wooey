@@ -88,8 +88,8 @@ class WooeyFormFactory(object):
             field_kwargs['choices'] = base_choices+[(str(i), str(i).title()) for i in choices]
         if form_field == 'TextField':
             form_field = 'CharField'
-            field_kwargs = {'widget': forms.Textarea}
-            widget_data_dict.update({'style': 'display: block'})  #slightly dirty hack to make a Text box appear on a new line, rather than next to its label
+            field_kwargs['widget'] = forms.Textarea
+            widget_data_dict['style'] = 'display: block'  #slightly dirty hack to make a Text box appear on a new line, rather than next to its label
         if form_field == 'FileField':
             if param.is_output:
                 form_field = 'CharField'
@@ -135,7 +135,7 @@ class WooeyFormFactory(object):
             initial_values = initial_dict.get(param.slug, None)
             field = self.get_field(param, initial=initial_values)
             field.name = param.slug
-            group_id = -1 if param.required else param.parameter_group.pk
+            group_id = -1 if param.required or param.parameter_group.group_name == "Required" else param.parameter_group.pk
             group_name = 'Required' if param.required else param.parameter_group.group_name
             group = group_map.get(group_id, {
                 'group': group_name,

@@ -52,7 +52,7 @@
                 {% endif %}
                 {{ field }}
                 {% if not field.is_hidden %}
-                <p class="help-block">{{ field.help_text }}</p>
+                <p class="help-block">{{ field.help_text|safe }}</p>
                 {% endif %}
                 </div>
             {% endfor %}
