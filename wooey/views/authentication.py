@@ -16,7 +16,7 @@ class WooeyRegister(CreateView):
     fields = ('username', 'email', 'password')
 
     def dispatch(self, request, *args, **kwargs):
-        if wooey_settings.WOOEY_AUTH is False:
+        if wooey_settings.WOOEY_AUTH is False or wooey_settings.WOOEY_ALLOW_REGISTRATION is False:
             return HttpResponseRedirect(wooey_settings.WOOEY_REGISTER_URL)
         return super(WooeyRegister, self).dispatch(request, *args, **kwargs)
 
