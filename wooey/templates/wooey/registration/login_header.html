@@ -13,7 +13,8 @@
 {% get_wooey_setting "WOOEY_REGISTER_URL" as registration_url %}
 {% if registration_url %}
 {#    This is a hack but it gets register aligned properly without any work#}
-  {% if wooey_settings.WOOEY_ALLOW_REGISTRATION %}
-    <div class="form-group"><li>&nbsp;&nbsp;<a href="{% url "wooey:wooey_register" %}">{% trans "Register" %}</a></li></div>
+    {% if wooey_settings.WOOEY_ALLOW_REGISTRATION %}
+        <div class="form-group"><li>&nbsp;&nbsp;<a href="{% url "wooey:wooey_register" %}">{% trans "Register" %}</a></li></div>
+    {% endif %}
 {% endif %}
 </form>

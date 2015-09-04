@@ -83,10 +83,6 @@ def get_user_favorite_count(user, app, model):
 def get_wooey_setting(name):
     return getattr(wooey_settings, name, "")
 
-@register.simple_tag
-def get_wooey_setting(name):
-    return getattr(wooey_settings, name, "")
-
 @register.filter
 def divide(value, arg):
     try:
