@@ -1,22 +1,43 @@
 from __future__ import absolute_import
-from django.contrib.admin import ModelAdmin, site
+import os
 
-from .models import Script, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
+from django.contrib.admin import ModelAdmin, site, TabularInline
+from django.forms import ModelForm, ValidationError
+from django.utils.translation import ugettext_lazy as _
+
+from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
+
 
 class JobAdmin(ModelAdmin):
-    list_display = ('user', 'job_name', 'script', 'status', 'created_date')
+    list_display = ('user', 'job_name', 'script_version', 'status', 'created_date')
+
+
+class ScriptVersionInline(TabularInline):
+    model = ScriptVersion
+    extra = 0
+
 
 class ScriptAdmin(ModelAdmin):
-    list_display = ('script_name', 'script_group', 'is_active', 'script_version')
+    list_display = ('script_name', 'script_group', 'is_active')
+    inlines = [
+        ScriptVersionInline
+    ]
+
+    class Media:
+        js = (os.path.join('wooey', 'js', 'admin', 'script.js'),)
+
 
 class ParameterAdmin(ModelAdmin):
-    list_display = ('script', 'parameter_group', 'short_param')
+    list_display = ('script_version', 'parameter_group', 'short_param')
+
 
 class GroupAdmin(ModelAdmin):
     list_display = ('group_name', 'is_active')
 
+
 class ParameterGroupAdmin(ModelAdmin):
-    list_display = ('script', 'group_name')
+    list_display = ('script_version', 'group_name')
+
 
 class FileAdmin(ModelAdmin):
     pass

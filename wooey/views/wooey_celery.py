@@ -3,7 +3,7 @@ import six
 
 from django.core.urlresolvers import reverse
 from django.views.generic import DetailView, TemplateView
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 from django.template.defaultfilters import escape
 
@@ -44,7 +44,7 @@ def generate_job_list(job_query):
         jobs.append({
             'id': job.pk,
             'name': escape(job.job_name),
-            'description': escape(six.u('Script: {}\n{}').format(job.script.script_name, job.job_description)),
+            'description': escape(six.u('Script: {}\n{}').format(job.script_version.script.script_name, job.job_description)),
             'url': reverse('wooey:celery_results', kwargs={'job_id': job.pk}),
             'submitted': job.created_date.strftime('%b %d %Y, %H:%M:%S'),
             'status': STATE_MAPPER.get(job.status, job.status),
@@ -53,7 +53,7 @@ def generate_job_list(job_query):
 
 
 def get_global_queue(request):
-    jobs = WooeyJob.objects.filter( Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED) )
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.RUNNING) | Q(status=WooeyJob.SUBMITTED))
     return jobs.order_by('-created_date')
 
 
@@ -76,7 +76,7 @@ def user_queue_json(request):
 
 def get_user_results(request):
     user = request.user
-    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & ( Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)) )
+    jobs = WooeyJob.objects.filter(Q(status=WooeyJob.COMPLETED) & (Q(user=None) | Q(user=user) if request.user.is_authenticated() else Q(user=None)))
     jobs = jobs.exclude(status=WooeyJob.DELETED)
     return jobs.order_by('-created_date')
 
@@ -93,12 +93,12 @@ def all_queues_json(request):
     user_results = get_user_results(request)
 
     return JsonResponse({
-        'totals':{
+        'totals': {
             'global': global_queue.count(),
             'user': user_queue.count(),
             'results': user_results.count(),
         },
-        'items':{
+        'items': {
             'global': generate_job_list(global_queue[:MAXIMUM_JOBS_NAVBAR]),
             'user': generate_job_list(user_queue[:MAXIMUM_JOBS_NAVBAR]),
             'results': generate_job_list(user_results[:MAXIMUM_JOBS_NAVBAR]),
@@ -111,8 +111,8 @@ def celery_task_command(request):
     command = request.POST.get('celery-command')
     job_id = request.POST.get('job-id')
     job = WooeyJob.objects.get(pk=job_id)
-    response = {'valid': False,}
-    valid = valid_user(job.script, request.user)
+    response = {'valid': False, }
+    valid = valid_user(job.script_version.script, request.user)
     if valid.get('valid') is True:
         user = request.user if request.user.is_authenticated() else None
         if user == job.user or job.user == None:
@@ -123,7 +123,7 @@ def celery_task_command(request):
                 job.submit_to_celery(user=request.user, rerun=True)
                 response.update({'valid': True, 'redirect': reverse('wooey:celery_results', kwargs={'job_id': job_id})})
             elif command == 'clone':
-                response.update({'valid': True, 'redirect': reverse('wooey:wooey_script_clone', kwargs={'slug': job.script.slug, 'job_id': job_id})})
+                response.update({'valid': True, 'redirect': reverse('wooey:wooey_script_clone', kwargs={'slug': job.script_version.script.slug, 'job_id': job_id})})
             elif command == 'delete':
                 job.status = WooeyJob.DELETED
                 job.save()
@@ -145,9 +145,15 @@ class JobBase(DetailView):
     model = WooeyJob
 
     def get_object(self):
-        # FIXME: Update urls to use PK
-        self.kwargs['pk'] = self.kwargs.get('job_id')
-        return super(JobBase, self).get_object()
+
+        if 'uuid' in self.kwargs:
+            return self.model.objects.get(uuid=self.kwargs['uuid'])
+
+        else:
+            # FIXME: Update urls to use PK
+            self.kwargs['pk'] = self.kwargs.get('job_id')
+
+            return super(JobBase, self).get_object()
 
     def get_context_data(self, **kwargs):
         ctx = super(JobBase, self).get_context_data(**kwargs)
@@ -156,7 +162,10 @@ class JobBase(DetailView):
         user = self.request.user
         user = None if not user.is_authenticated() and wooey_settings.WOOEY_ALLOW_ANONYMOUS else user
         job_user = wooey_job.user
-        if job_user == None or job_user == user or (user != None and user.is_superuser):
+        if job_user is None or job_user == user or \
+                (user is not None and user.is_superuser) or \
+                ('uuid' in self.kwargs):
+
             out_files = get_file_previews(wooey_job)
             all = out_files.pop('all', [])
             archives = out_files.pop('archives', [])
@@ -230,8 +239,3 @@ class UserResultsView(JobListBase):
 
     def get_queryset(self, *args, **kwargs):
         return get_user_results(self.request)
-
-
-
-
-

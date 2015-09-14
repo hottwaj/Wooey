@@ -23,7 +23,7 @@ class Command(BaseCommand):
         script = options.get('script')
         if not script:
             if len(args):
-                 script = args[0]
+                script = args[0]
             else:
                 raise CommandError('You must provide a script path or directory containing scripts.')
         if not os.path.exists(script):
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                         # save it locally as well (the default_storage will default to the remote store)
                         local_storage = get_storage(local=True)
                         local_storage.save(os.path.join(wooey_settings.WOOEY_SCRIPT_DIR, os.path.split(script)[1]), File(f))
-                res = add_wooey_script(script=script, group=group)
+                res = add_wooey_script(script_path=script, group=group)
                 if res['valid']:
                     converted += 1
         sys.stdout.write('Converted {} scripts\n'.format(converted))

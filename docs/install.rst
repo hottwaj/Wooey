@@ -55,3 +55,17 @@ Installation with existing Django Projects
        
     6. You may also need to define a MEDIA_ROOT, MEDIA_URL, STATIC_ROOT, and STATIC_URL
        if these are not setup already.
+
+Installation on remote servers
+------------------------------
+
+We have provided guides for several available services that host sites, as well as guides for steps common to multiple services (such as using Amazon Web Services).
+For examples not listed here, you are free to open up an `issue <https://github.com/wooey/wooey/issues>`_. (or document it and send a pull request!).
+
+.. toctree::
+   :maxdepth: 1
+
+   heroku
+   openshift
+   aws
+   celery

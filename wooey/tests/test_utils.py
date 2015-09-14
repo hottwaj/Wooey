@@ -8,6 +8,7 @@ from . import factories
 from . import config
 from . import mixins
 
+
 class TestUtils(mixins.ScriptFactoryMixin, TestCase):
     def test_sanitize_name(self):
         assert(utils.sanitize_name('abc')) == 'abc'
@@ -26,7 +27,8 @@ class TestUtils(mixins.ScriptFactoryMixin, TestCase):
         from .. import settings as wooey_settings
         from django.contrib.auth.models import AnonymousUser
         user = AnonymousUser()
-        script = self.translate_script
+        script_version = self.translate_script
+        script = script_version.script
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
         wooey_settings.WOOEY_ALLOW_ANONYMOUS = False
@@ -35,7 +37,8 @@ class TestUtils(mixins.ScriptFactoryMixin, TestCase):
 
     def test_valid_user(self):
         user = factories.UserFactory()
-        script = self.translate_script
+        script_version = self.translate_script
+        script = script_version.script
         d = utils.valid_user(script, user)
         self.assertTrue(d['valid'])
         from .. import settings as wooey_settings
@@ -66,4 +69,3 @@ class TestFileDetectors(TestCase):
         res, preview = utils.test_delimited(self.file)
         self.assertEqual(res, True, 'Delimited parser fail')
         self.assertEqual(preview, [i.strip().split('\t') for i in open(self.file).readlines()], 'Delimited Preview Fail')
-

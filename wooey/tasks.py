@@ -13,18 +13,26 @@ from django.core.files import File
 from django.conf import settings
 from django.db.transaction import atomic
 
-
 from celery import Task
 from celery import states
 from celery import app
+from celery.signals import worker_process_init
 from celery.contrib import rdb
 
 from . import settings as wooey_settings
 
 celery_app = app.app_or_default()
 
+@worker_process_init.connect
+def configure_workers(*args, **kwargs):
+    # this sets up Django on nodes started by the worker daemon.
+    import django
+    django.setup()
+
+
 class WooeyTask(Task):
     pass
+
     # def after_return(self, status, retval, task_id, args, kwargs, einfo):
     #     job, created = WooeyJob.objects.get_or_create(wooey_celery_id=task_id)
     #     job.content_type.wooey_celery_state = status
@@ -54,7 +62,7 @@ def submit_script(**kwargs):
     utils.mkdirs(abscwd)
     # make sure we have the script, otherwise download it. This can happen if we have an ephemeral file system or are
     # executing jobs on a worker node.
-    script_path = job.script.script_path
+    script_path = job.script_version.script_path
     if not utils.get_storage(local=True).exists(script_path.path):
         utils.get_storage(local=True).save(script_path.path, script_path.file)
 
@@ -64,6 +72,7 @@ def submit_script(**kwargs):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=abscwd)
 
     stdout, stderr = proc.communicate()
+
     # tar/zip up the generated content for bulk downloads
     def get_valid_file(cwd, name, ext):
         out = os.path.join(cwd, name)
@@ -117,7 +126,6 @@ def submit_script(**kwargs):
                             remote.delete(s3path)
                         remote.save(s3path, File(open(filepath, 'rb')))
     utils.create_job_fileinfo(job)
-
 
     job.stdout = stdout
     job.stderr = stderr

@@ -4,11 +4,12 @@ from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.forms.models import modelform_factory
 from django.contrib.auth import login, authenticate, get_user_model
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text
 
 from .. import settings as wooey_settings
 from ..django_compat import JsonResponse
+
 
 class WooeyRegister(CreateView):
     template_name = 'wooey/registration/register.html'
@@ -45,6 +46,7 @@ class WooeyRegister(CreateView):
         auser = authenticate(username=self.object.username, password=self.request.POST['password'])
         login(self.request, auser)
         return reverse(next_url) if next_url else reverse('wooey:wooey_home')
+
 
 def wooey_login(request):
     if wooey_settings.WOOEY_AUTH is False:

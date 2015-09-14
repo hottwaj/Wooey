@@ -1,18 +1,22 @@
 from __future__ import absolute_import
 __author__ = 'chris'
 from django.forms.models import model_to_dict
-import six
+from ..backend import utils
+
 
 class UpdateScriptsMixin(object):
-    def save(self, **kwargs):
-        super(UpdateScriptsMixin, self).save(**kwargs)
-        from ..backend.utils import load_scripts
-        load_scripts()
+    pass
+    # this method is no longer needed, as scripts are not cached
+    # def save(self, **kwargs):
+    #     super(UpdateScriptsMixin, self).save(**kwargs)
+    #     # remove script from factory
+    #     utils.update_form_factory(script_version=self.script_version)
 
 
 class WooeyPy2Mixin(object):
     def __unicode__(self):
         return unicode(self.__str__())
+
 
 # from
 # http://stackoverflow.com/questions/1355150/django-when-saving-how-can-you-check-if-a-field-has-changed

@@ -13,7 +13,7 @@ from django.utils.safestring import mark_safe
 from .scripts import WooeyForm
 from . import config
 from ..backend import utils
-from ..models import ScriptParameter, Script
+from ..models import ScriptParameter, ScriptVersion
 from ..django_compat import flatatt, format_html
 from .. import version
 
@@ -32,7 +32,7 @@ def mutli_render(render_func, appender_data_dict=None):
         # build the attribute dict
         data_attrs = flatatt(appender_data_dict if appender_data_dict is not None else {})
         pieces.append(format_html('<a href="#{anchor}"{data}><span class="glyphicon glyphicon-plus"></span></a>', anchor=config.WOOEY_MULTI_WIDGET_ANCHOR
-                                  ,data=data_attrs))
+                                  , data=data_attrs))
         return mark_safe('\n'.join(pieces))
     return render
 
@@ -98,7 +98,7 @@ class WooeyFormFactory(object):
                     if not isinstance(initial, (list, tuple)):
                         initial = [initial]
                     initial = [os.path.split(i.name)[1] for i in initial]
-            elif initial is not None and list(filter(None, initial)): # for python3, we need to evaluate the filter object
+            elif initial is not None and list(filter(None, initial)):  # for python3, we need to evaluate the filter object
                 if isinstance(initial, (list, tuple)):
                     initial = [utils.get_storage_object(value) if not hasattr(value, 'path') else value for value in initial if value is not None]
                 else:
@@ -121,16 +121,16 @@ class WooeyFormFactory(object):
         field.widget.attrs.update(widget_data_dict)
         return field
 
-    def get_group_forms(self, model=None, pk=None,  initial_dict=None, render_fn=None):
+    def get_group_forms(self, script_version=None, pk=None, initial_dict=None, render_fn=None):
         pk = int(pk) if pk is not None else pk
         if initial_dict is None:
             initial_dict = {}
-        if pk is not None and pk in self.wooey_forms:
+        if pk is not None and pk in self.wooey_forms and initial_dict is None:
             if 'groups' in self.wooey_forms[pk]:
                 if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
                         (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
                     return copy.deepcopy(self.wooey_forms[pk]['groups'])
-        params = ScriptParameter.objects.filter(script=model).order_by('pk')
+        params = ScriptParameter.objects.filter(script_version=script_version).order_by('pk')
         # set a reference to the object type for POST methods to use
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         group_map = {}
@@ -148,9 +148,9 @@ class WooeyFormFactory(object):
             group_map[group_id] = group
         # create individual forms for each group
         group_map = OrderedDict([(i, group_map[i]) for i in sorted(group_map.keys())])
-        d = {'action': model.get_url()}
+        d = {'action': script_version.get_url()}
         d['groups'] = []
-        pk = model.pk
+        pk = script_version.pk
         for group_index, group in enumerate(six.iteritems(group_map)):
             group_pk, group_info = group
             form = WooeyForm()
@@ -170,22 +170,22 @@ class WooeyFormFactory(object):
             self.wooey_forms[pk] = {'groups': d}
         # if the master form doesn't exist, create it while we have the model
         if 'master' not in self.wooey_forms[pk]:
-            self.get_master_form(model=model, pk=pk)
+            self.get_master_form(script_version=script_version, pk=pk)
         return d
 
-    def get_master_form(self, model=None, pk=None):
+    def get_master_form(self, script_version=None, pk=None):
         pk = int(pk) if pk is not None else pk
         if pk is not None and pk in self.wooey_forms:
             if 'master' in self.wooey_forms[pk]:
                 if (version.PY_MINOR_VERSION == version.PY34 and version.PY_FULL_VERSION >= version.PY343) or \
                         (version.PY_MINOR_VERSION == version.PY33 and version.PY_FULL_VERSION >= version.PY336):
                     return copy.deepcopy(self.wooey_forms[pk]['master'])
-        if model is None and pk is not None:
-            model = Script.objects.get(pk=pk)
+        if script_version is None and pk is not None:
+            script_version = ScriptVersion.objects.get(pk=pk)
         master_form = WooeyForm()
-        params = ScriptParameter.objects.filter(script=model).order_by('pk')
+        params = ScriptParameter.objects.filter(script_version=script_version).order_by('pk')
         # set a reference to the object type for POST methods to use
-        pk = model.pk
+        pk = script_version.pk
         script_id_field = forms.CharField(widget=forms.HiddenInput)
         master_form.fields['wooey_type'] = script_id_field
         master_form.fields['wooey_type'].initial = pk
@@ -199,7 +199,11 @@ class WooeyFormFactory(object):
             self.wooey_forms[pk] = {'master': master_form}
         # create the group forms while we have the model
         if 'groups' not in self.wooey_forms[pk]:
-            self.get_group_forms(model=model, pk=pk)
+            self.get_group_forms(script_version=script_version, pk=pk)
         return master_form
+
+    def reset_forms(self, script_version=None):
+        if script_version is not None and script_version.pk in self.wooey_forms:
+            del self.wooey_forms[script_version.pk]
 
 DJ_FORM_FACTORY = WooeyFormFactory()
