@@ -82,9 +82,9 @@ def get_job_commands(job=None):
         if param and not values:
             com.append(param)
         else:
+            if param:
+                com.append(param)            
             for value in values:
-                if param:
-                    com.append(param)
                 com.append(value)
     return com
 
