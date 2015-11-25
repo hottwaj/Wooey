@@ -225,6 +225,7 @@ class WooeyJob(WooeyPy2Mixin, models.Model):
 
 class ScriptParameterGroup(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     group_name = models.TextField()
+    hidden = models.BooleanField(default=False)
     script_version = models.ForeignKey('ScriptVersion')
 
     class Meta:
@@ -253,6 +254,7 @@ class ScriptParameter(UpdateScriptsMixin, WooeyPy2Mixin, models.Model):
     input_type = models.CharField(max_length=255)
     param_help = models.TextField(verbose_name='help', null=True, blank=True)
     is_checked = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
     parameter_group = models.ForeignKey('ScriptParameterGroup')
 
     class Meta:
@@ -337,6 +339,8 @@ class ScriptParameters(WooeyPy2Mixin, models.Model):
         if field == self.BOOLEAN:
             if value:
                 return com
+            else:
+                del com['parameter']
         if field == self.FILE:
             if self.parameter.is_output:
                 try:
