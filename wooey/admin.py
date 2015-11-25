@@ -5,12 +5,18 @@ from django.contrib.admin import ModelAdmin, site, TabularInline
 from django.forms import ModelForm, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, WooeyJob, ScriptParameterGroup, WooeyFile
+from .models import Script, ScriptVersion, ScriptGroup, ScriptParameter, ScriptParameters, WooeyJob, ScriptParameterGroup, WooeyFile
 
+class ScriptParametersInline(TabularInline):
+    model = ScriptParameters
+    readonly_fields = ('parameter', )
+    extra = 0
 
 class JobAdmin(ModelAdmin):
     list_display = ('user', 'job_name', 'script_version', 'status', 'created_date')
-
+    inlines = [
+        ScriptParametersInline
+    ]
 
 class ScriptVersionInline(TabularInline):
     model = ScriptVersion
